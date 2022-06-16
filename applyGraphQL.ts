@@ -1,7 +1,7 @@
-import { graphql, gql } from "./deps.ts";
+import { gql, graphql } from "./deps.ts";
 import {
-  renderPlaygroundPage,
   ISettings,
+  renderPlaygroundPage,
 } from "./graphql-playground-html/render-playground-html.ts";
 import { makeExecutableSchema } from "./graphql-tools/schema/makeExecutableSchema.ts";
 
@@ -58,7 +58,7 @@ export async function applyGraphQL<T>({
           resolvers,
           contextResult,
           body.variables || undefined,
-          body.operationName || undefined
+          body.operationName || undefined,
         );
 
         response.status = 200;
