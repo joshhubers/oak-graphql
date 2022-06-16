@@ -1,7 +1,9 @@
 import { graphql, gql } from "./deps.ts";
-import { renderPlaygroundPage, ISettings } from "./graphql-playground-html/render-playground-html.ts";
+import {
+  renderPlaygroundPage,
+  ISettings,
+} from "./graphql-playground-html/render-playground-html.ts";
 import { makeExecutableSchema } from "./graphql-tools/schema/makeExecutableSchema.ts";
-import { fileUploadMiddleware, GraphQLUpload } from "./fileUpload.ts";
 
 interface Constructable<T> {
   new (...args: any): T & OakRouter;
@@ -35,37 +37,21 @@ export async function applyGraphQL<T>({
   resolvers,
   context,
   usePlayground = true,
-  settings
+  settings,
 }: ApplyGraphQLOptions<T>): Promise<T> {
   const router = new Router();
 
-  const augmentedTypeDefs = Array.isArray(typeDefs) ? typeDefs : [typeDefs];
-  augmentedTypeDefs.push(
-    gql`
-      scalar Upload
-    `
-  );
-  if (Array.isArray(resolvers)) {
-    if (resolvers.every((resolver) => !resolver.Upload)) {
-      resolvers.push({ Upload: GraphQLUpload });
-    }
-  } else {
-    if (resolvers && !resolvers.Upload) {
-      resolvers.Upload = GraphQLUpload;
-    }
-  }
-
   const schema = makeExecutableSchema({
-    typeDefs: augmentedTypeDefs,
+    typeDefs,
     resolvers: [resolvers],
   });
 
-  await router.post(path, fileUploadMiddleware, async (ctx: any) => {
+  await router.post(path, async (ctx: any) => {
     const { response, request } = ctx;
     if (request.hasBody) {
       try {
         const contextResult = context ? await context(ctx) : undefined;
-        const body = ctx.params.operations || await request.body().value;
+        const body = ctx.params.operations || (await request.body().value);
         const result = await (graphql as any)(
           schema,
           body.query,
@@ -105,7 +91,7 @@ export async function applyGraphQL<T>({
         const playground = renderPlaygroundPage({
           endpoint: request.url.origin + path,
           subscriptionEndpoint: request.url.origin,
-          settings
+          settings,
         });
         response.status = 200;
         response.body = playground;
